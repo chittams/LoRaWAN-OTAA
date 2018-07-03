@@ -1,5 +1,4 @@
 import machine
-from machine import ADC
 from machine import I2C
 from network import LoRa
 import ustruct
@@ -7,31 +6,12 @@ from ustruct import pack
 import Adafruit_BME280
 import Adafruit_CCS811
 import Adafruit_TSL2591
+import battery
+import config
 import LTC2946
-import binascii
 import pycom
 import socket
 import time
-
-adc = machine.ADC(0)
-
-def battery():
-    numADCreadings = const(100)
-    adcread  = adc.channel(attn=3, pin='P16')
-    samplesADC = [0.0]*numADCreadings; meanADC = 0.0
-    count = 0
-    while (count < numADCreadings):
-        adcint = adcread()
-        samplesADC[count] = adcint
-        meanADC += adcint
-        count += 1
-    meanADC /= numADCreadings
-    varianceADC = 0.0
-    for adcint in samplesADC:
-        varianceADC += (adcint - meanADC)**2
-    varianceADC /= (numADCreadings - 1)
-    mV = meanADC*1400/1024
-    return mV
 
 pycom.heartbeat(False) #needs to be disabled for LED functions to work
 pycom.rgbled(0x0f0000) #red
@@ -41,8 +21,8 @@ lora = LoRa(mode=LoRa.LORAWAN, public=1,  adr=0, tx_retries=0, region=LoRa.AU915
 
 #Set AppEUI and AppKey - use your values from the device settings --> https://console.thethingsnetwork.org/
 dev_eui = lora.mac()
-app_eui = binascii.unhexlify('xxxxxxxxxxxxxxxx')
-app_key = binascii.unhexlify('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
+app_eui = config.LORA_APP_EUI
+app_key = config.LORA_APP_KEY
 
 # Remove default channels
 for index in range(0, 72):
@@ -52,10 +32,8 @@ for index in range(0, 72):
 for index in range(0, 7):
     lora.add_channel(index, frequency=923300000+index*600000, dr_min=0, dr_max=3)
 
-
 for index in range(8, 15):
     lora.add_channel(index, frequency=915200000+index*200000, dr_min=0, dr_max=3)
-
 
 lora.add_channel(65, frequency=917500000,  dr_min=4,  dr_max=4)
 
@@ -83,16 +61,20 @@ s = socket.socket(socket.AF_LORA, socket.SOCK_RAW)
 # set the LoRaWAN data rate
 s.setsockopt(socket.SOL_LORA, socket.SO_DR, 5)
 
+# set the BME280 sensor 
 sensor1 = Adafruit_BME280.BME280(t_mode=Adafruit_BME280.BME280_OSAMPLE_8, p_mode=Adafruit_BME280.BME280_OSAMPLE_8, h_mode=Adafruit_BME280.BME280_OSAMPLE_8,i2c=i2c)
+# set the TSL2591 sensor
 sensor2 = Adafruit_TSL2591.TSL2591(i2c=i2c)
+# set the CCS811 sensor
 #sensor3 = Adafruit_CCS811.CCS811(i2c=i2c)
+#set the LTC2946 sensor
 sensor4 = LTC2946.LTC2946(i2c=i2c)
 
 def main():
     while lora.has_joined():
         pycom.rgbled(0x00000f) #blue
 
-        voltage = battery()
+        voltage = battery.status()
         degrees = sensor1.read_temperature()
         pascals = sensor1.read_pressure()
         hectopascals = pascals / 100
