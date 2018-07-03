@@ -33,3 +33,5 @@ LORA_APP_KEY = binascii.unhexlify('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
 #LoRa frequency for AU915
 LORA_FREQUENCY = 923300000
 
+# Time deplay between updates
+TIMEOUT = 5

@@ -37,7 +37,7 @@ for index in range(8, 15):
 
 lora.add_channel(65, frequency=917500000,  dr_min=4,  dr_max=4)
 
-lora.frequency(923300000)
+lora.frequency(config.LORA_FREQUENCY)
 
 #Join TTN Network via OTAA
 lora.join(activation=LoRa.OTAA, auth=(dev_eui, app_eui, app_key), timeout=0)
@@ -74,12 +74,14 @@ def main():
     while lora.has_joined():
         pycom.rgbled(0x00000f) #blue
 
+        #Collect the sensor data ready to send out
         voltage = battery.status()
         degrees = sensor1.read_temperature()
         pascals = sensor1.read_pressure()
         hectopascals = pascals / 100
         humidity = sensor1.read_humidity()
 
+        #Create the packet word in Hex
         packet = pack("ffff",voltage,degrees,hectopascals,humidity)
 
         print('Battery     = {0:0.3f} mV'.format(voltage))
@@ -89,12 +91,15 @@ def main():
         print('Lux:        = {}'.format(sensor2.lux))
         print('------------------------------')
 
-        time.sleep(1)
+        time.sleep(config.TIMEOUT)
+        # Turn the LED off
         pycom.heartbeat(False)
-        time.sleep(1)
+        # Set the LoRa radio to send
         s.setblocking(True)
+        # Send the packet out over the LoRa network
         s.send(bytes(packet))
+        # Set the LoRa radio to recive
         s.setblocking(False)
-        time.sleep(1)
+        time.sleep(config.TIMEOUT)
 
 main()
