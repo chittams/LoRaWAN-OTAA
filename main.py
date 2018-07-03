@@ -41,8 +41,8 @@ lora = LoRa(mode=LoRa.LORAWAN, public=1,  adr=0, tx_retries=0, region=LoRa.AU915
 
 #Set AppEUI and AppKey - use your values from the device settings --> https://console.thethingsnetwork.org/
 dev_eui = lora.mac()
-app_eui = binascii.unhexlify('70B3D57ED000FF15')
-app_key = binascii.unhexlify('1486F238D7545DF185BC45C9E75D15CF')
+app_eui = binascii.unhexlify('xxxxxxxxxxxxxxxx')
+app_key = binascii.unhexlify('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
 
 # Remove default channels
 for index in range(0, 72):
