@@ -1,5 +1,6 @@
 import machine
 import config
+import time
 from machine import RTC
 from network import WLAN
 
