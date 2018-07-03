@@ -9,7 +9,7 @@ if machine.reset_cause() != machine.SOFT_RESET:
 
 if not wlan.isconnected():
     # change the line below to match your network ssid, security and password
-    wlan.connect('router', auth=(WLAN.WPA2, 'LetMeInAgain'), timeout=5000)
+    wlan.connect('xxxxxxxx', auth=(WLAN.WPA2, 'xxxxxxxxxxxxx'), timeout=5000)
     print('Connected to WiFi router...')
     while not wlan.isconnected():
         machine.idle() # save power while waiting
