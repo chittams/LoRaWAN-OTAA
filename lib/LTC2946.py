@@ -207,12 +207,12 @@ LTC2946_GPIOCFG_GPIO2_OUT_MASK             = 0xFD
 LTC2946_GPIO3_CTRL_GPIO3_MASK              = 0xBF
 
 # LSB Weights
-const float LTC2946_ADIN_lsb = 5.001221E-04;                      #!< Typical ADIN lsb weight in volts
-const float LTC2946_DELTA_SENSE_lsb = 2.5006105E-05;              #!< Typical Delta lsb weight in volts
-const float LTC2946_VIN_lsb = 2.5006105E-02;                      #!< Typical VIN lsb weight in volts
-const float LTC2946_Power_lsb = 6.25305E-07;                      #!< Typical POWER lsb weight in V^2 VIN_lsb * DELTA_SENSE_lsb
-const float LTC2946_ADIN_DELTA_SENSE_lsb = 1.25061E-08;           #!< Typical sense lsb weight in V^2  *ADIN_lsb * DELTA_SENSE_lsb
-const float LTC2946_INTERNAL_TIME_lsb = 4101.00/250000.00;        #!< Internal TimeBase lsb. Use LTC2946_TIME_lsb if an external CLK is used. See Settings menu for how to calculate Time LSB.
+LTC2946_ADIN_lsb = 5.001221E-04                      #!< Typical ADIN lsb weight in volts
+LTC2946_DELTA_SENSE_lsb = 2.5006105E-05              #!< Typical Delta lsb weight in volts
+LTC2946_VIN_lsb = 2.5006105E-02                      #!< Typical VIN lsb weight in volts
+LTC2946_Power_lsb = 6.25305E-07                      #!< Typical POWER lsb weight in V^2 VIN_lsb * DELTA_SENSE_lsb
+LTC2946_ADIN_DELTA_SENSE_lsb = 1.25061E-08           #!< Typical sense lsb weight in V^2  *ADIN_lsb * DELTA_SENSE_lsb
+LTC2946_INTERNAL_TIME_lsb = 4101.00/250000.00        #!< Internal TimeBase lsb. Use LTC2946_TIME_lsb if an external CLK is used. See Settings menu for how to calculate Time LSB.
 
 class LTC2946:
 
@@ -235,27 +235,29 @@ class LTC2946:
 
     #! SENSE+ - Snapshot mode
     def read_voltage(self):
+        busy = 1
         LTC2946_mode = (LTC2946_CHANNEL_CONFIG_SNAPSHOT | LTC2946_SENSE_PLUS)
         self._device.write8(LTC2946_CTRLA_REG, LTC2946_mode)
         
-        while (0x8 & busy)
-            busy = self._device.read8(LTC2946_STATUS2_REG)
+        while (0x8 & busy):
+            busy = self._device.readU8(LTC2946_STATUS2_REG)
         
-        voltage_code = self._device.readS16(LTC2946_VIN_MSB_REG)
+        voltage_code = ((self._device.readS16BE(LTC2946_VIN_MSB_REG) >> 4) & 0xfff) # formats into 12bit
         voltage = voltage_code * LTC2946_VIN_lsb
         return voltage
 
     #! ADIN - Snapshot Mode
     def read_ADIN(self, scale):
+        busy = 1
         LTC2946_mode = LTC2946_CHANNEL_CONFIG_SNAPSHOT | LTC2946_ADIN
         self._device.write8(LTC2946_CTRLA_REG, LTC2946_mode)
 
-        while (0x8 & busy)
-            busy = self._device.read8(LTC2946_STATUS2_REG)
+        while (0x8 & busy):
+            busy = self._device.readU8(LTC2946_STATUS2_REG)
 
-        ADIN_code = self._device.readS16(LTC2946_ADIN_MSB_REG)
-        max_ADIN_code = self._device.readS16(LTC2946_MAX_ADIN_MSB_REG)
-        min_ADIN_code = self._device.readS16(LTC2946_MIN_ADIN_MSB_REG)
+        ADIN_code     = ((self._device.readS16BE(LTC2946_ADIN_MSB_REG)     >> 4) & 0xfff) # formats into 12bit
+        max_ADIN_code = ((self._device.readS16BE(LTC2946_MAX_ADIN_MSB_REG) >> 4) & 0xfff) # formats into 12bit
+        min_ADIN_code = ((self._device.readS16BE(LTC2946_MIN_ADIN_MSB_REG) >> 4) & 0xfff) # formats into 12bit
         ADIN = ADIN_code * LTC2946_ADIN_lsb * scale
         max_ADIN = max_ADIN_code * LTC2946_ADIN_lsb * scale
         min_ADIN = min_ADIN_code * LTC2946_ADIN_lsb * scale
@@ -263,29 +265,31 @@ class LTC2946:
     
     #! VDD - Snapshot Mode
     def read_VDD(self):
+        busy = 1
         LTC2946_mode = LTC2946_CHANNEL_CONFIG_SNAPSHOT | LTC2946_VDD
         self._device.write8(LTC2946_CTRLA_REG, LTC2946_mode)
 
-        while (0x8 & busy)
-            busy = self._device.read8(LTC2946_STATUS2_REG)
+        while (0x8 & busy):
+            busy = self._device.readU8(LTC2946_STATUS2_REG)
 
-        VDD_code = self._device.readS16(LTC2946_VIN_MSB_REG)
+        VDD_code = ((self._device.readS16BE(LTC2946_VIN_MSB_REG) >> 4) & 0xfff) # formats into 12bit
         VDD = VDD_code * LTC2946_VIN_lsb
         return VDD
     
     #! Current - Snapshot Mode
-    def read_Current(self):
+    def read_current(self):
+        busy = 1
         LTC2946_mode = LTC2946_CHANNEL_CONFIG_SNAPSHOT | LTC2946_DELTA_SENSE
         self._device.write8(LTC2946_CTRLA_REG, LTC2946_mode)
 
-        while (0x8 & busy)
-            busy = self._device.read8(LTC2946_STATUS2_REG)
+        while (0x8 & busy):
+            busy = self._device.readU8(LTC2946_STATUS2_REG)
 
-        current_code = self._device.readS16(LTC2946_DELTA_SENSE_MSB_REG)
-        max_current_code = self._device.readS16(LTC2946_MAX_DELTA_SENSE_MSB_REG)
-        min_current_code = self._device.readS16(LTC2946_MIN_DELTA_SENSE_MSB_REG)
+        current_code     = ((self._device.readS16BE(LTC2946_DELTA_SENSE_MSB_REG)     >> 4) & 0xfff) # formats into 12bit
+        max_current_code = ((self._device.readS16BE(LTC2946_MAX_DELTA_SENSE_MSB_REG) >> 4) & 0xfff) # formats into 12bit
+        min_current_code = ((self._device.readS16BE(LTC2946_MIN_DELTA_SENSE_MSB_REG) >> 4) & 0xfff) # formats into 12bit
         
         current = current_code * LTC2946_DELTA_SENSE_lsb
         max_current = max_current_code * LTC2946_DELTA_SENSE_lsb
-        min_current = min_current_code * LTC2946_DELTA_SENSE_lsb);
+        min_current = min_current_code * LTC2946_DELTA_SENSE_lsb
         return current,max_current,min_current

@@ -10,7 +10,7 @@ wlan = WLAN() # get current object, without changing the mode
 if machine.reset_cause() != machine.SOFT_RESET:
     wlan.init(mode=WLAN.STA)
     # configuration below MUST match your home router settings!!
-    if not DHCP:
+    if not config.DHCP:
         wlan.ifconfig(config=(IP_ADDR, IP_MASK, IP_GATE, IP_DNS))
 
 if not wlan.isconnected():

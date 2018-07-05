@@ -1,31 +1,21 @@
-import machine
-
-class Battery:
-    numADCreadings = const(100)
-
-    def __init__(self):
-        self.adc = machine.ADC(0)
-        self.adcread = self.adc.channel(attn=3, pin='P16')
-        self.samplesADC = [0.0]*numADCreadings
-        self.meanADC = 0.0
-
-    def checkLow(self):
-        voltage = status() * 1000
-        if(status() < 3.8):
-            return True
-        return False
-
+numADCreadings = const(100)
+class battery(object):
     def status():
+        import machine
+        from machine import ADC
+        adc = ADC(0)
+        adcread = adc.channel(attn=3, pin='P16')
+        samplesADC = [0.0]*numADCreadings; meanADC = 0.0
         count = 0
         while (count < numADCreadings):
-            adcint = self.adcread()
-            self.samplesADC[count] = adcint
-            self.meanADC += adcint
+            adcint = adcread()
+            samplesADC[count] = adcint
+            meanADC += adcint
             count += 1
-        self.meanADC /= numADCreadings
+        meanADC /= numADCreadings
         varianceADC = 0.0
-        for adcint in self.samplesADC:
-            varianceADC += (adcint - self.meanADC)**2
+        for adcint in samplesADC:
+            varianceADC += (adcint - meanADC)**2
         varianceADC /= (numADCreadings - 1)
-        mV = self.meanADC*1400/1024
+        mV = meanADC*1400/1024
         return mV
