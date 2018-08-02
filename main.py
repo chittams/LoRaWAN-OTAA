@@ -3,6 +3,8 @@ from machine import I2C
 from network import LoRa
 import ustruct
 from ustruct import pack
+from deepsleep import DeepSleep
+import deepsleep
 #import Adafruit_BME280
 #import Adafruit_CCS811
 #import Adafruit_TSL2591
@@ -12,6 +14,8 @@ import config
 import pycom
 import socket
 import time
+
+ds = DeepSleep()
 
 pycom.heartbeat(False) #needs to be disabled for LED functions to work
 pycom.rgbled(0x0f0000) #red
@@ -43,11 +47,11 @@ lora.frequency(config.LORA_FREQUENCY)
 lora.join(activation=LoRa.OTAA, auth=(dev_eui, app_eui, app_key), timeout=0)
 
 # wait until the module has joined the network
-# while not lora.has_joined():
-#     pycom.rgbled(0x0f0f00) #yellow
-#     time.sleep(5)
-#     print('Trying to join TTN Network!')
-#     pass
+while not lora.has_joined():
+    pycom.rgbled(0x0f0f00) #yellow
+    time.sleep(5)
+    print('Trying to join TTN Network!')
+    pass
 
 print('Network joined!')
 pycom.rgbled(0x000f00) #green
@@ -72,8 +76,6 @@ sensor4 = LTC2946.LTC2946(i2c=i2c)
 
 def main():
     while lora.has_joined():
-        pycom.rgbled(0x00000f) #blue
-
         #Collect the sensor data ready to send out
         voltage = sensor4.read_voltage()
         #degrees = sensor1.read_temperature()
@@ -92,15 +94,20 @@ def main():
         #print('Lux:        = {}'.format(sensor2.lux))
         print('------------------------------')
 
-        time.sleep(config.TIMEOUT)
+        pycom.rgbled(0x00000f) #blue
         # Turn the LED off
-        pycom.heartbeat(False)
         # Set the LoRa radio to send
         s.setblocking(True)
         # Send the packet out over the LoRa network
         s.send(bytes(packet))
         # Set the LoRa radio to recive
         s.setblocking(False)
-        time.sleep(config.TIMEOUT)
+        pycom.heartbeat(False)
+        #time.sleep(config.TIMEOUT)
+        ds.go_to_sleep(60)  # go to sleep for 60 seconds
+        pycom.rgbled(0x000f00) #green
+        time.sleep(2)
+        pycom.heartbeat(False)
+        ds.go_to_sleep(60)  # go to sleep for 60 seconds
 
-#main()
+main()
